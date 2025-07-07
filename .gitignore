@@ -1,4 +1,5 @@
 # .gitignore
+PokeGoCli
 *.exe
 *.out
 *.test
