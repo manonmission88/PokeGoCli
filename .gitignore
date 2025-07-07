@@ -1,0 +1,6 @@
+# .gitignore
+*.exe
+*.out
+*.test
+/vendor/
+.DS_Store
