@@ -16,6 +16,14 @@ func (c *Client) CallLocation(pageUrl *string) (InnerLocations, error) {
 	if pageUrl != nil {
 		url = *pageUrl
 	}
+	// first check on the cache
+	if data, ok := c.cache.Get(url); ok {
+		var localResp InnerLocations
+		if err := json.Unmarshal(data, &localResp); err == nil {
+			return localResp, nil
+		}
+	}
+	// if cache hit
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return InnerLocations{}, err
@@ -30,6 +38,7 @@ func (c *Client) CallLocation(pageUrl *string) (InnerLocations, error) {
 	if err != nil {
 		return InnerLocations{}, err
 	}
+	c.cache.Add(url, data)
 	locationResp := InnerLocations{}
 	err = json.Unmarshal(data, &locationResp)
 	if err != nil {

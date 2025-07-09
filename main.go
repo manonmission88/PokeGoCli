@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/manonmission88/PokeGoCli/internal/pokecache"
 	"github.com/manonmission88/PokeGoCli/pokeapi"
 )
 
@@ -106,7 +107,7 @@ func commandHelp(cfg *config) error {
 
 func main() {
 	cfg := &config{
-		PokeClient: pokeapi.NewClient(5 * time.Second),
+		PokeClient: pokeapi.NewClient(5*time.Second, pokecache.NewCache(7*time.Second)),
 	}
 	// read the cli input
 	reader := bufio.NewScanner(os.Stdin)

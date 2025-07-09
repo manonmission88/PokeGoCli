@@ -22,7 +22,8 @@ func NewCache(interval time.Duration) *Cache {
 	return c
 }
 
-func (c *Cache) Add(key string, val []byte) cacheEntry {
+// just add the created time and val to our entry
+func (c *Cache) Add(key string, val []byte) {
 	// lock the cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
