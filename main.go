@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -24,7 +25,38 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(cfg *config) error
+}
+
+func commandMapf(cfg *config) error {
+	resp, err := cfg.PokeClient.CallLocation(cfg.NextLocation)
+	if err != nil {
+		return err
+	}
+	// supporting paginations
+	cfg.NextLocation = resp.Next
+	cfg.PreviousLocation = resp.Previous
+	for _, loc := range resp.Results {
+		fmt.Printf(loc.Name)
+	}
+	return nil
+}
+
+func commandMapb(cfg *config) error {
+	if cfg.PreviousLocation == nil {
+		return errors.New("no any previous page--you are on the very first page")
+	}
+	resp, err := cfg.PokeClient.CallLocation(cfg.PreviousLocation)
+	if err != nil {
+		return err
+	}
+	// supporting paginations
+	cfg.NextLocation = resp.Next
+	cfg.PreviousLocation = resp.Previous
+	for _, loc := range resp.Results {
+		fmt.Printf(loc.Name)
+	}
+	return nil
 }
 
 // mapping commands and features
@@ -40,18 +72,28 @@ func getCommands() map[string]cliCommand {
 			description: "Exit the Pokedex",
 			callback:    commandExit,
 		},
+		"mapf": {
+			name:        "mapf",
+			description: "next all locations",
+			callback:    commandMapf,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "previous 20 locations",
+			callback:    commandMapb,
+		},
 	}
 }
 
 // method to exit the repl
-func commandExit() error {
+func commandExit(cfg *config) error {
 	fmt.Printf("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
 // method for help
-func commandHelp() error {
+func commandHelp(cfg *config) error {
 	fmt.Println("Available commands:")
 	for _, cmd := range getCommands() {
 		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
