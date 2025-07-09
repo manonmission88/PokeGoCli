@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/manonmission88/PokeGoCli/pokeapi"
 )
 
 // split the sentence into list of words
@@ -37,7 +40,7 @@ func commandMapf(cfg *config) error {
 	cfg.NextLocation = resp.Next
 	cfg.PreviousLocation = resp.Previous
 	for _, loc := range resp.Results {
-		fmt.Printf(loc.Name)
+		fmt.Println(loc.Name)
 	}
 	return nil
 }
@@ -54,7 +57,7 @@ func commandMapb(cfg *config) error {
 	cfg.NextLocation = resp.Next
 	cfg.PreviousLocation = resp.Previous
 	for _, loc := range resp.Results {
-		fmt.Printf(loc.Name)
+		fmt.Println(loc.Name)
 	}
 	return nil
 }
@@ -72,8 +75,8 @@ func getCommands() map[string]cliCommand {
 			description: "Exit the Pokedex",
 			callback:    commandExit,
 		},
-		"mapf": {
-			name:        "mapf",
+		"map": {
+			name:        "map",
 			description: "next all locations",
 			callback:    commandMapf,
 		},
@@ -102,10 +105,14 @@ func commandHelp(cfg *config) error {
 }
 
 func main() {
+	cfg := &config{
+		PokeClient: pokeapi.NewClient(5 * time.Second),
+	}
 	// read the cli input
 	reader := bufio.NewScanner(os.Stdin)
 	fmt.Printf("Welcome to the Pokedex!\n")
 	for {
+		fmt.Print("Pokedex > ")
 		reader.Scan()
 		inputText := reader.Text()
 		words := cleanInput(inputText)
@@ -115,7 +122,7 @@ func main() {
 		command := words[0]
 		cmd, ok := getCommands()[command]
 		if ok {
-			err := cmd.callback()
+			err := cmd.callback(cfg)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -126,5 +133,4 @@ func main() {
 		}
 
 	}
-
 }

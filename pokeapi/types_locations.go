@@ -1,6 +1,6 @@
-package main
+package pokeapi
 
-// field structis
+// field struct
 type InnerLocations struct {
 	Count    int     `json:"count"`
 	Next     *string `json:"next"`

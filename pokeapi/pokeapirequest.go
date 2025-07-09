@@ -7,12 +7,12 @@ import (
 )
 
 const (
-	baseURL = "https://pokeapi.co/api/v2"
+	baseUrl = "https://pokeapi.co/api/v2"
 )
 
 // locations list
 func (c *Client) CallLocation(pageUrl *string) (InnerLocations, error) {
-	url := baseURL + "/location-area"
+	url := baseUrl + "/location-area"
 	if pageUrl != nil {
 		url = *pageUrl
 	}
