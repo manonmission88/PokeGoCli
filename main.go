@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -101,6 +102,43 @@ func commandExplore(cfg *config, args []string) error {
 
 }
 
+// method to return all the explored locations
+func commandCatch(cfg *config, args []string) error {
+	if len(args) > 1 {
+		return errors.New("too many parameters : usage catch <pokemon name>")
+	}
+	if len(args) == 0 {
+		return errors.New("usage catch <pokemon name>")
+	}
+	pokemonName := args[0]
+
+	if _, ok := cfg.PokeDox[pokemonName]; ok {
+		fmt.Println("This pokemon is already caught..")
+		return nil
+
+	}
+	fmt.Println("Throwing a Pokeball at " + pokemonName + "....")
+	resp, err := cfg.PokeClient.CatchPokemon(pokemonName)
+	if err != nil {
+		return err
+	}
+	baseExperience := resp.BaseExperience
+	catchChance := 100 - baseExperience
+	if catchChance < 30 {
+		catchChance = 30 // 10 % chance for everyone
+	}
+	rand.Seed(time.Now().UnixNano())
+	roll := rand.Intn(100)
+	if roll < catchChance {
+		fmt.Printf("%s was caught\n", pokemonName)
+		cfg.PokeDox[pokemonName] = CaughtPokeMon{Name: pokemonName}
+	} else {
+		fmt.Printf("%s escaped!\n", pokemonName)
+	}
+	return nil
+
+}
+
 // mapping commands and features
 func getCommands() map[string]cliCommand {
 	return map[string]cliCommand{
@@ -125,9 +163,14 @@ func getCommands() map[string]cliCommand {
 			callback:    commandMapb,
 		},
 		"explore": {
-			name:        "explore",
+			name:        "explore <location >",
 			description: "all locations Pokemon located",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch <pokemon>",
+			description: "catch the pokemon",
+			callback:    commandCatch,
 		},
 	}
 }
@@ -135,6 +178,7 @@ func getCommands() map[string]cliCommand {
 func main() {
 	cfg := &config{
 		PokeClient: pokeapi.NewClient(5*time.Second, pokecache.NewCache(7*time.Second)),
+		PokeDox:    make(map[string]CaughtPokeMon),
 	}
 	// read the cli input
 	reader := bufio.NewScanner(os.Stdin)
