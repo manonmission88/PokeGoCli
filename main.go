@@ -29,10 +29,10 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(cfg *config) error
+	callback    func(cfg *config, args []string) error
 }
 
-func commandMapf(cfg *config) error {
+func commandMapf(cfg *config, args []string) error {
 	resp, err := cfg.PokeClient.CallLocation(cfg.NextLocation)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func commandMapf(cfg *config) error {
 	return nil
 }
 
-func commandMapb(cfg *config) error {
+func commandMapb(cfg *config, args []string) error {
 	if cfg.PreviousLocation == nil {
 		return errors.New("no any previous page--you are on the very first page")
 	}
@@ -61,6 +61,44 @@ func commandMapb(cfg *config) error {
 		fmt.Println(loc.Name)
 	}
 	return nil
+}
+
+// method to exit the repl
+func commandExit(cfg *config, args []string) error {
+	fmt.Printf("Closing the Pokedex... Goodbye!")
+	os.Exit(0)
+	return nil
+}
+
+// method for help
+func commandHelp(cfg *config, args []string) error {
+	fmt.Println("Available commands:")
+	for _, cmd := range getCommands() {
+		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
+	}
+	return nil
+}
+
+// method to return all the explored locations
+func commandExplore(cfg *config, args []string) error {
+	if len(args) > 1 {
+		return errors.New("too many parameters : usage explore <area name>")
+	}
+	if len(args) == 0 {
+		return errors.New("usage explore <area name>")
+	}
+	area := args[0]
+	fmt.Println("Exploring the " + area + "....")
+	resp, err := cfg.PokeClient.ExploreLocation(area)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Found Pokemon ")
+	for _, loc := range resp.PokemonEncounters {
+		fmt.Println("* " + loc.Pokemon.Name)
+	}
+	return nil
+
 }
 
 // mapping commands and features
@@ -86,23 +124,12 @@ func getCommands() map[string]cliCommand {
 			description: "previous 20 locations",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore",
+			description: "all locations Pokemon located",
+			callback:    commandExplore,
+		},
 	}
-}
-
-// method to exit the repl
-func commandExit(cfg *config) error {
-	fmt.Printf("Closing the Pokedex... Goodbye!")
-	os.Exit(0)
-	return nil
-}
-
-// method for help
-func commandHelp(cfg *config) error {
-	fmt.Println("Available commands:")
-	for _, cmd := range getCommands() {
-		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
-	}
-	return nil
 }
 
 func main() {
@@ -123,7 +150,7 @@ func main() {
 		command := words[0]
 		cmd, ok := getCommands()[command]
 		if ok {
-			err := cmd.callback(cfg)
+			err := cmd.callback(cfg, words[1:])
 			if err != nil {
 				fmt.Println(err)
 			}
