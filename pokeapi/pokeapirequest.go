@@ -89,9 +89,9 @@ func (c *Client) CatchPokemon(pokemonName string) (PokemonStat, error) {
 	url := baseUrl + "/pokemon/" + pokemonName + "/"
 	// first check on the cache
 	if data, ok := c.cache.Get(url); ok {
-		var localResp PokemonStat
-		if err := json.Unmarshal(data, &localResp); err == nil {
-			return localResp, nil
+		var poke PokemonStat
+		if err := json.Unmarshal(data, &poke); err == nil {
+			return poke, nil
 		}
 	}
 	// if cache hit
@@ -110,11 +110,11 @@ func (c *Client) CatchPokemon(pokemonName string) (PokemonStat, error) {
 		return PokemonStat{}, err
 	}
 	c.cache.Add(url, data)
-	locationResp := AllInnerLocations{}
-	err = json.Unmarshal(data, &locationResp)
+	pokemon := PokemonStat{}
+	err = json.Unmarshal(data, &pokemon)
 	if err != nil {
 		return PokemonStat{}, err
 	}
-	return PokemonStat{}, nil
+	return pokemon, nil
 
 }

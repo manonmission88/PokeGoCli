@@ -110,33 +110,66 @@ func commandCatch(cfg *config, args []string) error {
 	if len(args) == 0 {
 		return errors.New("usage catch <pokemon name>")
 	}
-	pokemonName := args[0]
+	pokemonName := strings.ToLower(args[0])
 
 	if _, ok := cfg.PokeDox[pokemonName]; ok {
 		fmt.Println("This pokemon is already caught..")
 		return nil
-
 	}
+
 	fmt.Println("Throwing a Pokeball at " + pokemonName + "....")
-	resp, err := cfg.PokeClient.CatchPokemon(pokemonName)
+	pokemon, err := cfg.PokeClient.CatchPokemon(pokemonName)
 	if err != nil {
 		return err
 	}
-	baseExperience := resp.BaseExperience
-	catchChance := 100 - baseExperience
-	if catchChance < 30 {
-		catchChance = 30 // 10 % chance for everyone
+
+	difficulty := pokemon.BaseExperience
+	if difficulty > 60 {
+		difficulty = 60
 	}
-	rand.Seed(time.Now().UnixNano())
+	chance := 100 - difficulty
+
 	roll := rand.Intn(100)
-	if roll < catchChance {
-		fmt.Printf("%s was caught\n", pokemonName)
-		cfg.PokeDox[pokemonName] = CaughtPokeMon{Name: pokemonName}
-	} else {
-		fmt.Printf("%s escaped!\n", pokemonName)
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemon.Name)
+	if roll >= chance {
+		fmt.Printf("%s escaped!\n", pokemon.Name)
+		return nil
+	}
+
+	fmt.Printf("%s was caught!\n", pokemon.Name)
+	cfg.PokeDox[pokemonName] = pokemon
+	return nil
+}
+
+// method to return the stats of the pokemon
+func commandInspect(cfg *config, args []string) error {
+	if len(args) > 1 {
+		return errors.New("too many parameters : usage inspect <pokemon name>")
+	}
+	if len(args) == 0 {
+		return errors.New("usage inspect <pokemon name>")
+	}
+	pokemonName := args[0]
+	pokemonName = strings.ToLower(pokemonName)
+	pokemon, ok := cfg.PokeDox[pokemonName]
+	if !ok {
+		fmt.Println("You did not caught the pokemone yet ! No stats availabe! ")
+		return nil
+	}
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats: ")
+	for _, s := range pokemon.Stats {
+		fmt.Printf("  -%s: %d\n", s.Stat.Name, s.BaseStat)
+
+	}
+	fmt.Println("Types: ")
+	for _, t := range pokemon.Types {
+		fmt.Printf("  -%s\n", t.Type.Name)
+
 	}
 	return nil
-
 }
 
 // mapping commands and features
@@ -172,13 +205,19 @@ func getCommands() map[string]cliCommand {
 			description: "catch the pokemon",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect <pokemon>",
+			description: "all the stats of the pokemon",
+			callback:    commandInspect,
+		},
 	}
 }
 
+// calling all the commands here in our Pokedox Cli
 func main() {
 	cfg := &config{
 		PokeClient: pokeapi.NewClient(5*time.Second, pokecache.NewCache(7*time.Second)),
-		PokeDox:    make(map[string]CaughtPokeMon),
+		PokeDox:    make(map[string]pokeapi.PokemonStat),
 	}
 	// read the cli input
 	reader := bufio.NewScanner(os.Stdin)

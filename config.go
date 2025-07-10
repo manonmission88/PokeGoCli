@@ -7,9 +7,5 @@ type config struct {
 	PokeClient       pokeapi.Client
 	NextLocation     *string
 	PreviousLocation *string
-	PokeDox          map[string]CaughtPokeMon
-}
-
-type CaughtPokeMon struct {
-	Name string
+	PokeDox          map[string]pokeapi.PokemonStat
 }
