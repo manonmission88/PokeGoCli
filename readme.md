@@ -29,7 +29,7 @@ The goal of this project is to create a lightweight and interactive CLI applicat
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/yourusername/PokeGoCli.git
+    git clone https://github.com/manonmission88/PokeGoCli.git
     cd PokeGoCli
     ```
 
